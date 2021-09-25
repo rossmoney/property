@@ -96,7 +96,8 @@ class PropertiesData {
             }
 
             if ($details['type'] == 'range') {
-                $details['value'] = filter_var($details['value'], FILTER_SANITIZE_NUMBER_INT);
+                $details['value_min'] = filter_var($details['value_min'], FILTER_SANITIZE_NUMBER_INT);
+                $details['value_max'] = filter_var($details['value_max'], FILTER_SANITIZE_NUMBER_INT);
                 $countStmt->bindParam($field . 'min', $details['value_min'], PDO::PARAM_INT);
                 $countStmt->bindParam($field . 'max', $details['value_max'], PDO::PARAM_INT);
 
@@ -116,7 +117,8 @@ class PropertiesData {
         }
 
         //append page specific values to result query
-        $resultStmt->bindParam(':offset', $page, PDO::PARAM_INT);
+        $offset = ($page * $pageSize) - $pageSize;
+        $resultStmt->bindParam(':offset', $offset, PDO::PARAM_INT);
         $resultStmt->bindParam(':rows', $pageSize, PDO::PARAM_INT);
 
         if ($countStmt->execute()) {

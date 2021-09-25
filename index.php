@@ -42,10 +42,10 @@ $properties->pdo()->close(); //close MySQL connection
     </head>
     <body>
         <!-- Page content-->
-            <div class="text-center mt-5">
+            <div class="text-center">
                 <h1>Properties</h1>
 
-                <h2>Page <?php echo $page; ?>: Results <?php echo ((($page-1) * $pageSize) + 1). ' - ' . ($page * $pageSize); ?> of <?php echo $totalResults; ?></h2>
+                <p>Page <?php echo $page; ?>: Results <?php echo ((($page-1) * $pageSize) + 1). ' - ' . (($page * $pageSize) > $totalResults ? $totalResults : $page * $pageSize) ; ?> of <?php echo $totalResults; ?></p>
 
                 <?php 
                 //pagination buttons are duplicated top and bottom of result table, use include file to reduce repetition of code
