@@ -1,3 +1,4 @@
+
 -- Dumping structure for table property.properties
 CREATE TABLE IF NOT EXISTS `properties` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
