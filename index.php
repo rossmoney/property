@@ -9,7 +9,7 @@ use App\PropertiesData;
 $properties = new PropertiesData();
 
 //initialize variables from input form parameters
-$town = $_REQUEST['town'] ?? ''; 
+$town = $_REQUEST['town'] ?? '';
 $propertyType = $_REQUEST['property_type'] ?? '';
 $priceMin = isset($_REQUEST['price_min']) ? $_REQUEST['price_min'] : '';
 $priceMax = $_REQUEST['price_max'] ?? '';
@@ -18,7 +18,7 @@ $numBedrooms = $_REQUEST['num_bedrooms'] ?? '';
 $page = $_REQUEST["page"] ?? 1;
 $pageSize = $_REQUEST["page_size"] ?? 30;
 
-//specific which fields we want to search on, then call helper function to generate array of search parameters for paginate function 
+//specific which fields we want to search on, then call helper function to generate array of search parameters for paginate function
 //based on what fields we can search + the sanitized search queries
 $searchFields = ['num_bedrooms' => 'int', 'property_type' => 'string', 'price' => 'range', 'town' => 'like'];
 $search = generate_search_params($searchFields);
@@ -45,9 +45,9 @@ $properties->pdo()->close(); //close MySQL connection
             <div class="text-center">
                 <h1>Properties</h1>
 
-                <p>Page <?php echo $page; ?>: Results <?php echo ((($page-1) * $pageSize) + 1). ' - ' . (($page * $pageSize) > $totalResults ? $totalResults : $page * $pageSize) ; ?> of <?php echo $totalResults; ?></p>
+                <p>Page <?php echo $page; ?>: Results <?php echo((($page-1) * $pageSize) + 1). ' - ' . (($page * $pageSize) > $totalResults ? $totalResults : $page * $pageSize) ; ?> of <?php echo $totalResults; ?></p>
 
-                <?php 
+                <?php
                 //pagination buttons are duplicated top and bottom of result table, use include file to reduce repetition of code
                 include('includes/pagination.php'); ?>
 
@@ -92,7 +92,7 @@ $properties->pdo()->close(); //close MySQL connection
                         </form>
                     </thead>
                     <tbody>
-                        <?php foreach($result as $row) : ?>
+                        <?php foreach ($result as $row) : ?>
                         <tr>
                             <td><?php echo $row['town']; ?></td>
                             <td><?php echo $row['county']; ?></td>
@@ -104,7 +104,7 @@ $properties->pdo()->close(); //close MySQL connection
                             <td><?php echo $row['latitude'] .',<br>' . $row['longitude']; ?></td>
                             <td><?php echo $row['num_bedrooms']; ?></td>
                             <td><?php echo $row['num_bathrooms']; ?></td>
-                            <?php //format price in pound format ?>
+                            <?php //format price in pound format?>
                             <td>&pound;<?php echo number_format($row['price'], 2, '.', ','); ?></td>
                             <td><?php echo $row['property_type_title']; ?></td>
                             <td><?php echo $row['type']; ?></td>

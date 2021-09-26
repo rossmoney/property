@@ -11,7 +11,8 @@ use Spatie\GuzzleRateLimiterMiddleware\RateLimiterMiddleware;
 use App\PDOHelper;
 use PDO;
 
-class PropertiesData {
+class PropertiesData
+{
     private $endPoint;
     private $apiKey;
     private $pageSize;
@@ -21,7 +22,8 @@ class PropertiesData {
     private $guzzle;
     private $pdo;
 
-    private function setupGuzzle() {
+    private function setupGuzzle()
+    {
         //Create new guzzle client for later use, and set up ratelimiting
         $stack = HandlerStack::create();
         $stack->push(RateLimiterMiddleware::perSecond(3));
@@ -31,7 +33,8 @@ class PropertiesData {
         ]);
     }
 
-    public function __construct(string $endPoint = ENDPOINT, string $apiKey = APIKEY, int $startPage = 1, int $pageSize = 100) {
+    public function __construct(string $endPoint = ENDPOINT, string $apiKey = APIKEY, int $startPage = 1, int $pageSize = 100)
+    {
         $this->endPoint = $endPoint;
         $this->apiKey = $apiKey;
         $this->pageSize = $pageSize;
@@ -44,7 +47,8 @@ class PropertiesData {
         $this->pdo = new PDOHelper();
     }
 
-    public function paginate(int $page, int $pageSize, array $search = []) {
+    public function paginate(int $page, int $pageSize, array $search = [])
+    {
 
         //does the majority of work to search for database entries for frontend and returns results
 
@@ -86,9 +90,8 @@ class PropertiesData {
         $countStmt = $this->pdo->conn()->prepare("SELECT COUNT(*) ". $query);
         $resultStmt = $this->pdo->conn()->prepare("SELECT $selectFields " . $query . " LIMIT :offset, :rows");
         
-        //sanitize and append search query values, for each field type 
-        foreach($search as $field => $details) {
-
+        //sanitize and append search query values, for each field type
+        foreach ($search as $field => $details) {
             if ($details['type'] == 'int') {
                 $details['value'] = filter_var($details['value'], FILTER_SANITIZE_NUMBER_FLOAT);
                 $countStmt->bindParam($field, $details['value'], PDO::PARAM_INT);
@@ -122,7 +125,7 @@ class PropertiesData {
         $resultStmt->bindParam(':rows', $pageSize, PDO::PARAM_INT);
 
         if ($countStmt->execute()) {
-            //Calculate total number of results 
+            //Calculate total number of results
             $result = $countStmt->fetch();
             $totalResults = $result['COUNT(*)'];
             //Calculate total number of pages
@@ -137,7 +140,8 @@ class PropertiesData {
         return [$pageCount, $totalResults, $result];
     }
 
-    public function refreshTables() {
+    public function refreshTables()
+    {
         //Delete and recreate all tables
         $this->pdo->conn()->query("DROP TABLE `properties`");
 
@@ -178,27 +182,24 @@ class PropertiesData {
 
         //$this->pdo->conn()->query("ALTER TABLE `property_types`
           //  ADD CONSTRAINT `FK_property_types_properties` FOREIGN KEY (`id`) REFERENCES `properties` (`property_type_id`);");
-
     }
 
-    public function saveDataToDatabase() {
+    public function saveDataToDatabase()
+    {
         //pulls data from api and saves to database
         //utilises ratelimiting and saves data to database in chunks to speed up performance
         $seenPropertyTypes = [];
 
         while ($this->pageNumber <= $this->lastPage) {
-
             echo 'Requesting page ' . $this->pageNumber . '...';
 
             try {
-
                 $res = $this->guzzle->request('GET', $this->endPoint . '/api/properties', [
                     'api_key' => $this->apiKey,
                     'query' => [
                         'page' => ['size' => $this->pageSize, 'number' => $this->pageNumber]
                     ]
                 ]);
-
             } catch (\Exception $e) {
                 //if we have gone too fast and we aren't allowed to request anything else, pause for 10 seconds then retry
                 if (!empty($res) && $res->getStatusCode() == 429) { //too many requests
@@ -224,51 +225,50 @@ class PropertiesData {
                 $stmt = $this->pdo->conn()->prepare($query);
 
                 //try {
-                    $this->pdo->conn()->beginTransaction();
+                $this->pdo->conn()->beginTransaction();
 
-                    foreach($response['data'] as $row) {
-                        
-                        $sanitized = [];
+                foreach ($response['data'] as $row) {
+                    $sanitized = [];
 
-                        foreach($row as $key => $value) {
-                            if ($key == 'property_type') {
-                                //store these seperately in property_types table and link via foreign key to properties
-                                $ptSanitized = [];
+                    foreach ($row as $key => $value) {
+                        if ($key == 'property_type') {
+                            //store these seperately in property_types table and link via foreign key to properties
+                            $ptSanitized = [];
 
-                                if (!in_array($value['id'], $seenPropertyTypes)) {
-                                    $seenPropertyTypes[] = $value['id'];
+                            if (!in_array($value['id'], $seenPropertyTypes)) {
+                                $seenPropertyTypes[] = $value['id'];
 
-                                    $ptQuery = "INSERT INTO property_types(id, title, `description`, created_at, updated_at) VALUES(?,?,?,?,?);";
-                                    $ptStmt = $this->pdo->conn()->prepare($ptQuery);
+                                $ptQuery = "INSERT INTO property_types(id, title, `description`, created_at, updated_at) VALUES(?,?,?,?,?);";
+                                $ptStmt = $this->pdo->conn()->prepare($ptQuery);
 
-                                    foreach($value as $ptKey => $ptValue) {
-                                        if ($ptKey == 'updated_at' && empty($ptValue)) {
-                                            $ptSanitized[] = date("Y-m-d H:i:s");
-                                            continue;
-                                        }
-
-                                        $ptSanitized[] = filter_var($ptValue, FILTER_SANITIZE_STRING);
+                                foreach ($value as $ptKey => $ptValue) {
+                                    if ($ptKey == 'updated_at' && empty($ptValue)) {
+                                        $ptSanitized[] = date("Y-m-d H:i:s");
+                                        continue;
                                     }
 
-                                    if (!$ptStmt->execute($ptSanitized)) {
-                                        //print debug data to console if execution failed
-                                        var_dump($ptQuery, $ptSanitized, $ptStmt->error, $ptStmt->param_count);
-                                    }
+                                    $ptSanitized[] = filter_var($ptValue, FILTER_SANITIZE_STRING);
                                 }
 
-                                continue; //do not try to insert into properties table
+                                if (!$ptStmt->execute($ptSanitized)) {
+                                    //print debug data to console if execution failed
+                                    var_dump($ptQuery, $ptSanitized, $ptStmt->error, $ptStmt->param_count);
+                                }
                             }
 
-                            $sanitized[] = filter_var($value, FILTER_SANITIZE_STRING);
+                            continue; //do not try to insert into properties table
                         }
 
-                        if (!$stmt->execute($sanitized)) {
-                            var_dump($query, $sanitized, $stmt->error, $stmt->param_count);
-                        }
+                        $sanitized[] = filter_var($value, FILTER_SANITIZE_STRING);
                     }
 
-                    $this->pdo->conn()->commit();
-                    //commit queries to db before next api request
+                    if (!$stmt->execute($sanitized)) {
+                        var_dump($query, $sanitized, $stmt->error, $stmt->param_count);
+                    }
+                }
+
+                $this->pdo->conn()->commit();
+                //commit queries to db before next api request
 
                 /*} catch (Exception $e) {
                     $this->pdo->conn()->rollback();
@@ -281,7 +281,8 @@ class PropertiesData {
         }
     }
 
-    public function pdo() {
+    public function pdo()
+    {
         //return pdo object so it can be closed from elsewhere
         return $this->pdo;
     }

@@ -7,7 +7,8 @@ require_once __DIR__ . '/../config.php';
 use PDO;
 use PDOException;
 
-class PDOHelper {
+class PDOHelper
+{
     private $pdo;
     private $hostname;
     private $username;
@@ -15,7 +16,8 @@ class PDOHelper {
     private $database;
     private $port;
 
-    public function __construct() {
+    public function __construct()
+    {
         //load data from constants stored in config.php
         $this->hostname = MYSQL_HOSTNAME;
         $this->username = MYSQL_USERNAME;
@@ -37,11 +39,12 @@ class PDOHelper {
         return $this->pdo = null;
     }
 
-    public function connect() {
+    public function connect()
+    {
         try {
             //do connection, fail gracefully if cannot connect
             $this->pdo = new PDO('mysql:host=' . $this->hostname . ';dbname=' . $this->database . ';port=' . $this->port, $this->username, $this->password);
-        } catch(PDOException $ex){
+        } catch (PDOException $ex) {
             die('Connect to mysql failed.');
         }
     }
